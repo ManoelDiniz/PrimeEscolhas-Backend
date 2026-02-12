@@ -61,6 +61,7 @@ class ProductsForm
                                         1 => 'Sim',
                                         0 => 'Não',
                                     ])
+
                                     ->default(true),
                                 Select::make('category_id')
                                     ->options(function () {
