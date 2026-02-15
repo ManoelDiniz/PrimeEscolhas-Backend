@@ -20,16 +20,17 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->longText('long_description')->nullable();
 
-            $table->decimal('current_price', 10, 2);
+            $table->decimal('current_price', 10, 2)->nullable();
             $table->decimal('old_price', 10, 2)->nullable();
 
             $table->string('image')->nullable();
-            $table->string('affiliate_url')->nullable();
 
-            $table->string('marketplace')->nullable();
-
-            $table->integer('review_count')->default(0);
             $table->decimal('rating', 2, 1)->nullable();
+            $table->integer('review_count')->default(0);
+
+            $table->decimal('score', 3, 1)->nullable(); // nota interna
+            $table->boolean('is_featured')->default(false);
+            $table->integer('views')->default(0);
 
             $table->boolean('in_stock')->default(true);
 
@@ -37,6 +38,11 @@ return new class extends Migration
                 ->nullable()
                 ->constrained()
                 ->nullOnDelete();
+
+            // SEO
+            $table->string('meta_title')->nullable();
+            $table->text('meta_description')->nullable();
+            $table->string('meta_keywords')->nullable();
 
             $table->timestamps();
         });

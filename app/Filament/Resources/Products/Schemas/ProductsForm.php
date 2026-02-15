@@ -3,6 +3,9 @@
 namespace App\Filament\Resources\Products\Schemas;
 
 use Dom\Text;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -36,15 +39,16 @@ class ProductsForm
                                     ->label('Preço Antigo')
                                     ->type('number')
                                     ->nullable(),
-                                TextInput::make('image')
-                                    ->label('Imagem')
-                                    ->nullable(),
-                                TextInput::make('affiliate_url')
-                                    ->label('URL de Afiliado')
-                                    ->nullable(),
-                                TextInput::make('marketplace')
-                                    ->label('Marketplace')
-                                    ->nullable(),
+                                FileUpload::make('image')
+                                    ->image()
+                                    ->disk('public')
+                                    ->directory('products')
+                                    ->visibility('public')
+                                    ->acceptedFileTypes([
+                                        'image/jpeg',
+                                        'image/png',
+                                        'image/webp',
+                                    ]),
                                 TextInput::make('review_count')
                                     ->label('Contagem de Avaliações')
                                     ->type('number')
@@ -64,11 +68,22 @@ class ProductsForm
                                     ->default(true),
                                 Select::make('category_id')
                                     ->options(function () {
-                                        // Aqui você pode buscar as categorias do banco de dados
+
                                         return \App\Models\Categories::pluck('name', 'id');
                                     })
                                     ->label('ID da Categoria')
                                     ->nullable(),
+                                TextInput::make('score')
+                                    ->numeric()
+                                    ->step(0.1)
+                                    ->nullable(),
+
+                                Select::make('is_featured')
+                                    ->options([
+                                        1 => 'Sim',
+                                        0 => 'Não'
+                                    ])
+                                    ->default(0),
                             ])
                             ->columnSpan(2)
                             ->columns(2),
@@ -77,9 +92,9 @@ class ProductsForm
                                 Textarea::make('description')
                                     ->label('Descrição')
                                     ->nullable(),
-                                Textarea::make('long_description')
-                                    ->label('Descrição Longa')
-                                    ->nullable(),
+
+                                RichEditor::make('long_description')
+                                    ->columnSpanFull(),
 
                             ])
                             ->columnSpan(2),
@@ -97,6 +112,41 @@ class ProductsForm
                                     ->nullable(),
                             ])
                             ->columnSpan(2),
+                        Section::make('Links de Afiliado')
+                            ->schema([
+                                Repeater::make('affiliateLinks')
+                                    ->relationship()
+                                    ->schema([
+                                        TextInput::make('platform')
+                                            ->label('Plataforma')
+                                            ->required(),
+
+                                        TextInput::make('url')
+                                            ->label('URL')
+                                            ->required(),
+
+                                        TextInput::make('oldPrice')
+                                            ->label('Preço Antigo')
+                                            ->numeric()
+                                            ->nullable(),
+                                        TextInput::make('currentPrice')
+                                            ->label('Preço Atual')
+                                            ->numeric()
+                                            ->nullable(),
+                                        TextInput::make('discountPercentage')
+                                            ->label('Porcentagem de Desconto')
+                                            ->numeric()
+                                            ->nullable()
+                                            ->default(function ($record) {
+                                                if ($record && $record->oldPrice && $record->currentPrice) {
+                                                    return round((($record->oldPrice - $record->currentPrice) / $record->oldPrice) * 100, 2);
+                                                }
+                                                return null;
+                                            }),
+                                    ])
+                                    ->columns(3)
+                            ])
+
                     ]),
             ]);
     }

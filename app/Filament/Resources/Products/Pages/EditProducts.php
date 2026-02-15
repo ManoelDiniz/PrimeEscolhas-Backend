@@ -16,4 +16,9 @@ class EditProducts extends EditRecord
             DeleteAction::make(),
         ];
     }
+
+    protected function afterSave(): void
+    {
+        cache()->forget('products');
+    }
 }
