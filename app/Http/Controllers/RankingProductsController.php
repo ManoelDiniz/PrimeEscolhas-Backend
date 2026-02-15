@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ranking_products;
+use App\Models\RankingProducts;
 use Illuminate\Http\Request;
 
 class RankingProductsController extends Controller
@@ -34,7 +34,7 @@ class RankingProductsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(ranking_products $ranking_products)
+    public function show(RankingProducts $ranking_products)
     {
         //
     }
@@ -42,7 +42,7 @@ class RankingProductsController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(ranking_products $ranking_products)
+    public function edit(RankingProducts $ranking_products)
     {
         //
     }
@@ -50,7 +50,7 @@ class RankingProductsController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, ranking_products $ranking_products)
+    public function update(Request $request, RankingProducts $ranking_products)
     {
         //
     }
@@ -58,7 +58,7 @@ class RankingProductsController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(ranking_products $ranking_products)
+    public function destroy(RankingProducts $ranking_products)
     {
         //
     }

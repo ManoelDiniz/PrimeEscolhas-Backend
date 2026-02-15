@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\affiliate_links;
+use App\Models\AffiliateLinks;
 use Illuminate\Http\Request;
 
 class AffiliateLinksController extends Controller
@@ -34,7 +34,7 @@ class AffiliateLinksController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(affiliate_links $affiliate_links)
+    public function show(AffiliateLinks $affiliate_links)
     {
         //
     }
@@ -42,7 +42,7 @@ class AffiliateLinksController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(affiliate_links $affiliate_links)
+    public function edit(AffiliateLinks $affiliate_links)
     {
         //
     }
@@ -50,7 +50,7 @@ class AffiliateLinksController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, affiliate_links $affiliate_links)
+    public function update(Request $request, AffiliateLinks $affiliate_links)
     {
         //
     }
@@ -58,7 +58,7 @@ class AffiliateLinksController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(affiliate_links $affiliate_links)
+    public function destroy(AffiliateLinks $affiliate_links)
     {
         //
     }
