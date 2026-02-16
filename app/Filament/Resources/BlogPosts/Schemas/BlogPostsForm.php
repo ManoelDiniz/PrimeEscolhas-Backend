@@ -39,7 +39,8 @@ class BlogPostsForm
                 TextInput::make('meta_title'),
                 Textarea::make('meta_description')
                     ->columnSpanFull(),
-                TextInput::make('meta_keywords'),
+                TextInput::make('meta_keywords')
+                    ->columnSpanFull(),
             ]);
     }
 }
