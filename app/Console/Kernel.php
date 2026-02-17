@@ -12,7 +12,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('analytics:report')->everyFiveSeconds();
+        $schedule->command('analytics:report')->everyFifteenMinutes();
 
         $schedule->command('analytics:device-report')->everyTwoHours();
         // Executa o relatório diário todos os dias à meia-noite
