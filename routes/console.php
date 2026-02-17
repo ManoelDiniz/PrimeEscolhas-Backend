@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Schedule;
 |--------------------------------------------------------------------------
 */
 
-Schedule::command('analytics:report')->everyHour();
+Schedule::command('analytics:report')->everyFiveSeconds();
 
 Schedule::command('analytics:device-report')->everyTwoHours();
 
