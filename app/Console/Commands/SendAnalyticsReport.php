@@ -51,6 +51,11 @@ class SendAnalyticsReport extends Command
 
             $metrics = $rows[0]->getMetricValues();
 
+            // Verificar se há métricas suficientes
+            if (count($metrics) < 4) {
+                return [0, 0, 0, 0];
+            }
+
             return [
                 (int) $metrics[0]->getValue(),
                 (int) $metrics[1]->getValue(),
@@ -106,10 +111,22 @@ class SendAnalyticsReport extends Command
         $countriesResponse = $client->runReport($countriesRequest);
 
         $countries = "";
-        foreach ($countriesResponse->getRows() as $row) {
-            $country = $row->getDimensionValues()[0]->getValue();
-            $users = $row->getMetricValues()[0]->getValue();
-            $countries .= "🌎 {$country}: {$users} usuários\n";
+        $countryRows = $countriesResponse->getRows();
+        if (!empty($countryRows)) {
+            foreach ($countryRows as $row) {
+                $dimensionValues = $row->getDimensionValues();
+                $metricValues = $row->getMetricValues();
+
+                if (count($dimensionValues) > 0 && count($metricValues) > 0) {
+                    $country = $dimensionValues[0]->getValue();
+                    $users = $metricValues[0]->getValue();
+                    $countries .= "🌎 {$country}: {$users} usuários\n";
+                }
+            }
+        }
+
+        if (empty($countries)) {
+            $countries = "Nenhum dado disponível\n";
         }
 
         // 🏆 Top Páginas
@@ -132,10 +149,22 @@ class SendAnalyticsReport extends Command
         $pagesResponse = $client->runReport($pagesRequest);
 
         $pages = "";
-        foreach ($pagesResponse->getRows() as $row) {
-            $page = $row->getDimensionValues()[0]->getValue();
-            $viewsCount = $row->getMetricValues()[0]->getValue();
-            $pages .= "📄 {$page}: {$viewsCount} views\n";
+        $pageRows = $pagesResponse->getRows();
+        if (!empty($pageRows)) {
+            foreach ($pageRows as $row) {
+                $dimensionValues = $row->getDimensionValues();
+                $metricValues = $row->getMetricValues();
+
+                if (count($dimensionValues) > 0 && count($metricValues) > 0) {
+                    $page = $dimensionValues[0]->getValue();
+                    $viewsCount = $metricValues[0]->getValue();
+                    $pages .= "📄 {$page}: {$viewsCount} views\n";
+                }
+            }
+        }
+
+        if (empty($pages)) {
+            $pages = "Nenhum dado disponível\n";
         }
 
         // 📤 Mensagem final
