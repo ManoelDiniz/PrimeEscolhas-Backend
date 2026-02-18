@@ -33,11 +33,11 @@ class ProductsForm
                                     ->required(),
                                 TextInput::make('current_price')
                                     ->label('Preço Atual')
-                                    ->type('number')
+                                    ->numeric()
                                     ->required(),
                                 TextInput::make('old_price')
                                     ->label('Preço Antigo')
-                                    ->type('number')
+                                    ->numeric()
                                     ->nullable(),
                                 FileUpload::make('image')
                                     ->image()
