@@ -9,6 +9,7 @@ use Google\Analytics\Data\V1beta\Metric;
 use Google\Analytics\Data\V1beta\Dimension;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SendAnalyticsReport extends Command
 {
@@ -18,6 +19,8 @@ class SendAnalyticsReport extends Command
     public function handle()
     {
         $propertyId = env('GA4_PROPERTY_ID');
+
+        Log::alert('propertyId: ' . $propertyId);
 
         $client = new BetaAnalyticsDataClient([
             'credentials' => storage_path('app/google/service-account.json'),
