@@ -14,183 +14,163 @@ use Illuminate\Support\Facades\Log;
 class SendAnalyticsReport extends Command
 {
     protected $signature = 'analytics:report';
-    protected $description = 'Relatório horário do GA4 com crescimento e top métricas';
+    protected $description = 'Relatório horário GA4 melhorado';
 
     public function handle()
     {
-        $propertyId = env('GA4_PROPERTY_ID');
+        try {
 
-        Log::alert('propertyId: ' . $propertyId);
+            $propertyId = env('GA4_PROPERTY_ID');
 
-        $client = new BetaAnalyticsDataClient([
-            'credentials' => storage_path('app/google/service-account.json'),
-        ]);
-
-        // 🔹 Função para pegar métricas por período
-        $getMetrics = function ($startMinutesAgo, $endMinutesAgo) use ($client, $propertyId) {
-
-            $request = new RunReportRequest();
-            $request->setProperty('properties/' . $propertyId);
-
-            $dateRange = new DateRange();
-            $dateRange->setStartDate((new \DateTime())->modify("-{$startMinutesAgo} minutes")->format('Y-m-d'));
-            $dateRange->setEndDate((new \DateTime())->modify("-{$endMinutesAgo} minutes")->format('Y-m-d'));
-
-            $request->setDateRanges([$dateRange]);
-
-            $request->setMetrics([
-                new Metric(['name' => 'activeUsers']),
-                new Metric(['name' => 'sessions']),
-                new Metric(['name' => 'screenPageViews']),
-                new Metric(['name' => 'eventCount']),
+            $client = new BetaAnalyticsDataClient([
+                'credentials' => storage_path('app/google/service-account.json'),
             ]);
 
-            $response = $client->runReport($request);
-            $rows = $response->getRows();
+            $getMetrics = function ($startDate, $endDate) use ($client, $propertyId) {
 
-            if (empty($rows)) {
-                return [0, 0, 0, 0];
-            }
+                $request = new RunReportRequest();
+                $request->setProperty("properties/{$propertyId}");
 
-            $metrics = $rows[0]->getMetricValues();
+                $request->setDateRanges([
+                    new DateRange([
+                        'start_date' => $startDate,
+                        'end_date' => $endDate,
+                    ])
+                ]);
 
-            // Verificar se há métricas suficientes
-            if (count($metrics) < 4) {
-                return [0, 0, 0, 0];
-            }
+                $request->setMetrics([
+                    new Metric(['name' => 'activeUsers']),
+                    new Metric(['name' => 'sessions']),
+                    new Metric(['name' => 'screenPageViews']),
+                    new Metric(['name' => 'eventCount']),
+                ]);
 
-            return [
-                (int) $metrics[0]->getValue(),
-                (int) $metrics[1]->getValue(),
-                (int) $metrics[2]->getValue(),
-                (int) $metrics[3]->getValue(),
-            ];
-        };
+                $response = $client->runReport($request);
+                $rows = $response->getRows();
 
-        // 🔹 Hora atual (últimos 60 minutos)
-        [$currentUsers, $currentSessions, $currentViews, $currentEvents] =
-            $getMetrics(60, 0);
-
-        // 🔹 Hora anterior (120 a 60 minutos atrás)
-        [$previousUsers, $previousSessions, $previousViews, $previousEvents] =
-            $getMetrics(120, 60);
-
-        // 🔹 Cálculo percentual
-        $calcGrowth = function ($current, $previous) {
-            if ($previous == 0) {
-                return $current > 0 ? 100 : 0;
-            }
-            return round((($current - $previous) / $previous) * 100, 2);
-        };
-
-        $usersGrowth = $calcGrowth($currentUsers, $previousUsers);
-        $sessionsGrowth = $calcGrowth($currentSessions, $previousSessions);
-        $viewsGrowth = $calcGrowth($currentViews, $previousViews);
-        $eventsGrowth = $calcGrowth($currentEvents, $previousEvents);
-
-        $arrow = function ($value) {
-            if ($value > 0) return "📈 +{$value}%";
-            if ($value < 0) return "📉 {$value}%";
-            return "➖ 0%";
-        };
-
-        // 🌍 Top Países
-        $countriesRequest = new RunReportRequest();
-        $countriesRequest->setProperty('properties/' . $propertyId);
-
-        $dateRange = new DateRange();
-        $dateRange->setStartDate((new \DateTime())->modify('-60 minutes')->format('Y-m-d'));
-        $dateRange->setEndDate((new \DateTime())->format('Y-m-d'));
-
-        $countriesRequest->setDateRanges([$dateRange]);
-        $countriesRequest->setDimensions([
-            new Dimension(['name' => 'country'])
-        ]);
-        $countriesRequest->setMetrics([
-            new Metric(['name' => 'activeUsers'])
-        ]);
-        $countriesRequest->setLimit(3);
-
-        $countriesResponse = $client->runReport($countriesRequest);
-
-        $countries = "";
-        $countryRows = $countriesResponse->getRows();
-        if (!empty($countryRows)) {
-            foreach ($countryRows as $row) {
-                $dimensionValues = $row->getDimensionValues();
-                $metricValues = $row->getMetricValues();
-
-                if (count($dimensionValues) > 0 && count($metricValues) > 0) {
-                    $country = $dimensionValues[0]->getValue();
-                    $users = $metricValues[0]->getValue();
-                    $countries .= "🌎 {$country}: {$users} usuários\n";
+                if ($rows === null || $rows->count() === 0) {
+                    return [0, 0, 0, 0];
                 }
+
+                $row = $rows->offsetGet(0);
+                $metrics = $row->getMetricValues();
+
+                return [
+                    (int) ($metrics[0]->getValue() ?? 0),
+                    (int) ($metrics[1]->getValue() ?? 0),
+                    (int) ($metrics[2]->getValue() ?? 0),
+                    (int) ($metrics[3]->getValue() ?? 0),
+                ];
+            };
+
+            $today = now()->format('Y-m-d');
+            $yesterday = now()->subDay()->format('Y-m-d');
+
+            [$users, $sessions, $views, $events] =
+                $getMetrics($today, $today);
+
+            [$usersYesterday] =
+                $getMetrics($yesterday, $yesterday);
+
+            $growth = function ($current, $previous) {
+                if ($previous == 0) return $current > 0 ? 100 : 0;
+                return round((($current - $previous) / $previous) * 100, 2);
+            };
+
+            $formatGrowth = function ($value) {
+                if ($value > 0) return "📈 +{$value}%";
+                if ($value < 0) return "📉 {$value}%";
+                return "➖ 0%";
+            };
+
+            $usersGrowth = $growth($users, $usersYesterday);
+
+            $status = "⚖️ Estável";
+            if ($usersGrowth > 20) $status = "🔥 TRÁFEGO EM ALTA";
+            if ($usersGrowth < -20) $status = "🚨 QUEDA FORTE";
+
+            // Top Países
+            $countriesRequest = new RunReportRequest();
+            $countriesRequest->setProperty("properties/{$propertyId}");
+            $countriesRequest->setDateRanges([
+                new DateRange([
+                    'start_date' => $today,
+                    'end_date' => $today,
+                ])
+            ]);
+            $countriesRequest->setDimensions([
+                new Dimension(['name' => 'country'])
+            ]);
+            $countriesRequest->setMetrics([
+                new Metric(['name' => 'activeUsers'])
+            ]);
+            $countriesRequest->setLimit(3);
+
+            $countriesResponse = $client->runReport($countriesRequest);
+            $countries = "";
+
+            foreach ($countriesResponse->getRows() ?? [] as $row) {
+                $country = $row->getDimensionValues()[0]->getValue() ?? '-';
+                $count = $row->getMetricValues()[0]->getValue() ?? 0;
+                $countries .= "{$country} - {$count}\n";
             }
-        }
 
-        if (empty($countries)) {
-            $countries = "Nenhum dado disponível\n";
-        }
+            if (!$countries) $countries = "Sem dados\n";
 
-        // 🏆 Top Páginas
-        $pagesRequest = new RunReportRequest();
-        $pagesRequest->setProperty('properties/' . $propertyId);
+            // Top Páginas
+            $pagesRequest = new RunReportRequest();
+            $pagesRequest->setProperty("properties/{$propertyId}");
+            $pagesRequest->setDateRanges([
+                new DateRange([
+                    'start_date' => $today,
+                    'end_date' => $today,
+                ])
+            ]);
+            $pagesRequest->setDimensions([
+                new Dimension(['name' => 'pagePath'])
+            ]);
+            $pagesRequest->setMetrics([
+                new Metric(['name' => 'screenPageViews'])
+            ]);
+            $pagesRequest->setLimit(3);
 
-        $dateRange = new DateRange();
-        $dateRange->setStartDate((new \DateTime())->modify('-60 minutes')->format('Y-m-d'));
-        $dateRange->setEndDate((new \DateTime())->format('Y-m-d'));
+            $pagesResponse = $client->runReport($pagesRequest);
+            $pages = "";
 
-        $pagesRequest->setDateRanges([$dateRange]);
-        $pagesRequest->setDimensions([
-            new Dimension(['name' => 'pagePath'])
-        ]);
-        $pagesRequest->setMetrics([
-            new Metric(['name' => 'screenPageViews'])
-        ]);
-        $pagesRequest->setLimit(3);
-
-        $pagesResponse = $client->runReport($pagesRequest);
-
-        $pages = "";
-        $pageRows = $pagesResponse->getRows();
-        if (!empty($pageRows)) {
-            foreach ($pageRows as $row) {
-                $dimensionValues = $row->getDimensionValues();
-                $metricValues = $row->getMetricValues();
-
-                if (count($dimensionValues) > 0 && count($metricValues) > 0) {
-                    $page = $dimensionValues[0]->getValue();
-                    $viewsCount = $metricValues[0]->getValue();
-                    $pages .= "📄 {$page}: {$viewsCount} views\n";
-                }
+            foreach ($pagesResponse->getRows() ?? [] as $row) {
+                $page = $row->getDimensionValues()[0]->getValue() ?? '-';
+                $count = $row->getMetricValues()[0]->getValue() ?? 0;
+                $pages .= "{$page} - {$count}\n";
             }
-        }
 
-        if (empty($pages)) {
-            $pages = "Nenhum dado disponível\n";
-        }
+            if (!$pages) $pages = "Sem dados\n";
 
-        // 📤 Mensagem final
-        $message = "📊 **Relatório Hora a Hora - Prime Escolhas**
+            $message = "📊 **RELATÓRIO ANALYTICS - PRIME ESCOLHAS**
 
-👥 Usuários: {$currentUsers} ({$arrow($usersGrowth)})
-📈 Sessões: {$currentSessions} ({$arrow($sessionsGrowth)})
-📄 Visualizações: {$currentViews} ({$arrow($viewsGrowth)})
-🎯 Eventos: {$currentEvents} ({$arrow($eventsGrowth)})
+⏱ Comparação: Hoje vs Ontem
 
-🕒 Comparação: Última hora vs hora anterior
+👥 Usuários: {$users} ({$formatGrowth($usersGrowth)})
+📈 Sessões: {$sessions}
+📄 Views: {$views}
+🎯 Eventos: {$events}
 
-🌍 **Top Países**
+$status
+
+🌎 **Top Países**
 {$countries}
 
 🏆 **Top Páginas**
 {$pages}
-";
 
-        Http::post(env('DISCORD_WEBHOOK_URL_ANALYTICS'), [
-            'content' => $message
-        ]);
+🕒 Atualizado: " . now()->format('H:i');
 
-        $this->info('Relatório horário enviado com sucesso!');
+            Http::timeout(10)->post(env('DISCORD_WEBHOOK_URL_ANALYTICS'), [
+                'content' => $message
+            ]);
+
+            $this->info('Relatório enviado com sucesso!');
+        } catch (\Throwable $e) {
+            Log::error('Erro analytics: ' . $e->getMessage());
+        }
     }
 }
