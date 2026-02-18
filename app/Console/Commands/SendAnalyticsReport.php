@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Log;
 class SendAnalyticsReport extends Command
 {
     protected $signature = 'analytics:report';
-    protected $description = 'Relatório horário GA4 melhorado';
+    protected $description = 'Relatório diário comparando hoje vs ontem';
 
     public function handle()
     {
@@ -26,15 +26,15 @@ class SendAnalyticsReport extends Command
                 'credentials' => storage_path('app/google/service-account.json'),
             ]);
 
-            $getMetrics = function ($startDate, $endDate) use ($client, $propertyId) {
+            $getMetrics = function ($date) use ($client, $propertyId) {
 
                 $request = new RunReportRequest();
                 $request->setProperty("properties/{$propertyId}");
 
                 $request->setDateRanges([
                     new DateRange([
-                        'start_date' => $startDate,
-                        'end_date' => $endDate,
+                        'start_date' => $date,
+                        'end_date' => $date,
                     ])
                 ]);
 
@@ -66,11 +66,11 @@ class SendAnalyticsReport extends Command
             $today = now()->format('Y-m-d');
             $yesterday = now()->subDay()->format('Y-m-d');
 
-            [$users, $sessions, $views, $events] =
-                $getMetrics($today, $today);
+            [$usersToday, $sessionsToday, $viewsToday, $eventsToday] =
+                $getMetrics($today);
 
-            [$usersYesterday] =
-                $getMetrics($yesterday, $yesterday);
+            [$usersYesterday, $sessionsYesterday, $viewsYesterday, $eventsYesterday] =
+                $getMetrics($yesterday);
 
             $growth = function ($current, $previous) {
                 if ($previous == 0) return $current > 0 ? 100 : 0;
@@ -83,13 +83,16 @@ class SendAnalyticsReport extends Command
                 return "➖ 0%";
             };
 
-            $usersGrowth = $growth($users, $usersYesterday);
+            $usersGrowth = $growth($usersToday, $usersYesterday);
+            $sessionsGrowth = $growth($sessionsToday, $sessionsYesterday);
+            $viewsGrowth = $growth($viewsToday, $viewsYesterday);
+            $eventsGrowth = $growth($eventsToday, $eventsYesterday);
 
             $status = "⚖️ Estável";
             if ($usersGrowth > 20) $status = "🔥 TRÁFEGO EM ALTA";
             if ($usersGrowth < -20) $status = "🚨 QUEDA FORTE";
 
-            // Top Países
+            // Top Países Hoje
             $countriesRequest = new RunReportRequest();
             $countriesRequest->setProperty("properties/{$propertyId}");
             $countriesRequest->setDateRanges([
@@ -117,7 +120,7 @@ class SendAnalyticsReport extends Command
 
             if (!$countries) $countries = "Sem dados\n";
 
-            // Top Páginas
+            // Top Páginas Hoje
             $pagesRequest = new RunReportRequest();
             $pagesRequest->setProperty("properties/{$propertyId}");
             $pagesRequest->setDateRanges([
@@ -147,19 +150,30 @@ class SendAnalyticsReport extends Command
 
             $message = "📊 **RELATÓRIO ANALYTICS - PRIME ESCOLHAS**
 
-⏱ Comparação: Hoje vs Ontem
+📅 **HOJE (" . now()->format('d/m') . ")**
+👥 Usuários: {$usersToday}
+📈 Sessões: {$sessionsToday}
+📄 Views: {$viewsToday}
+🎯 Eventos: {$eventsToday}
 
-👥 Usuários: {$users} ({$formatGrowth($usersGrowth)})
-📈 Sessões: {$sessions}
-📄 Views: {$views}
-🎯 Eventos: {$events}
+📅 **ONTEM (" . now()->subDay()->format('d/m') . ")**
+👥 Usuários: {$usersYesterday}
+📈 Sessões: {$sessionsYesterday}
+📄 Views: {$viewsYesterday}
+🎯 Eventos: {$eventsYesterday}
+
+📊 **CRESCIMENTO**
+👥 Usuários: {$formatGrowth($usersGrowth)}
+📈 Sessões: {$formatGrowth($sessionsGrowth)}
+📄 Views: {$formatGrowth($viewsGrowth)}
+🎯 Eventos: {$formatGrowth($eventsGrowth)}
 
 $status
 
-🌎 **Top Países**
+🌎 **Top Países Hoje**
 {$countries}
 
-🏆 **Top Páginas**
+🏆 **Top Páginas Hoje**
 {$pages}
 
 🕒 Atualizado: " . now()->format('H:i');
