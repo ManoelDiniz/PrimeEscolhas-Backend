@@ -16,9 +16,18 @@ class CategoriesController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json($this->service->getAll());
+        $params = new \App\Dto\ParamDto(
+            page: $request->query('page', 1),
+            perPage: $request->query('perPage', 10),
+            search: $request->query('search'),
+            sortBy: $request->query('sortBy'),
+            sortDirection: $request->query('sortDirection'),
+            is_featured: $request->query('is_featured'),
+            published: $request->query('published')
+        );
+        return response()->json($this->service->getAll($params));
     }
 
     /**
@@ -67,5 +76,14 @@ class CategoriesController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    public function getBySlug(string $slug)
+    {
+        $category = $this->service->getbySlug($slug);
+        if (!$category) {
+            return response()->json(['message' => 'Categoria não encontrada'], 404);
+        }
+        return response()->json($category);
     }
 }

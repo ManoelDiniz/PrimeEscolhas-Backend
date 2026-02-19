@@ -4,7 +4,9 @@
 
 namespace App\Services\Categories;
 
+use App\Dto\ParamDto;
 use App\Repository\Categories\CategoriesRepository;
+use Illuminate\Support\Facades\Cache;
 
 class CategoriesService
 {
@@ -19,9 +21,13 @@ class CategoriesService
         return $this->repository->create($data);
     }
 
-    public function getAll()
+    public function getAll(?ParamDto $params = null)
     {
-        return $this->repository->getAll();
+
+        $cacheKey = 'categories_all';
+        return Cache::tags(['categories'])->remember($cacheKey, now()->addHours(6), function () use ($params) {
+            return $this->repository->getAll($params);
+        });
     }
 
     public function findById(int $id)
@@ -42,5 +48,10 @@ class CategoriesService
     public function count(): int
     {
         return $this->repository->count();
+    }
+
+    public function getbySlug(string $slug)
+    {
+        return $this->repository->getBySlug($slug);
     }
 }

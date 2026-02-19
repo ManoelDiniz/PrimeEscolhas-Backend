@@ -2,6 +2,7 @@
 
 namespace App\Repository\Categories;
 
+use App\Dto\ParamDto;
 use App\Models\Categories;
 
 class CategoriesRepository
@@ -11,9 +12,19 @@ class CategoriesRepository
         return Categories::create($data);
     }
 
-    public function getAll()
+    public function getAll(?ParamDto $params = null)
     {
-        return Categories::all();
+        $query = Categories::query();
+
+        if ($params?->search) {
+            $query->where('name', 'like', '%' . $params->search . '%');
+        }
+
+        if ($params?->sortBy && $params?->sortDirection) {
+            $query->orderBy($params->sortBy, $params->sortDirection);
+        }
+
+        return $query->paginate($params?->perPage ?? 10, ['*'], 'page', $params?->page ?? 1);
     }
 
     public function findById(int $id)
@@ -43,5 +54,10 @@ class CategoriesRepository
     public function count(): int
     {
         return Categories::count();
+    }
+
+    public function getBySlug(string $slug)
+    {
+        return Categories::where('slug', $slug)->with('products')->first();
     }
 }

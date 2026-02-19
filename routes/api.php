@@ -10,3 +10,4 @@ Route::get('/blog-posts', [\App\Http\Controllers\BlogPostsController::class, 'in
 Route::get('/blog-posts/{slug}', [\App\Http\Controllers\BlogPostsController::class, 'getBlogBySlug']);
 Route::post('customer-contacts', [\App\Http\Controllers\CustomerContactController::class, 'store']);
 Route::get('/categories', [\App\Http\Controllers\CategoriesController::class, 'index']);
+Route::get('/categories/{slug}', [\App\Http\Controllers\CategoriesController::class, 'getBySlug']);

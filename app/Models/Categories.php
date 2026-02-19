@@ -10,11 +10,14 @@ class Categories extends Model
         'name',
         'slug',
         'parent_id',
+        'meta_title',
+        'meta_description',
+        'meta_keywords',
     ];
 
     public function products()
     {
-        return $this->hasMany(Products::class);
+        return $this->hasMany(Products::class, 'category_id');
     }
 
     public function parent()
