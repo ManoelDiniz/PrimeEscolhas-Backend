@@ -19,7 +19,7 @@ class IndexTestUrl extends Command
         $products = Products::get();
 
         foreach ($products as $product) {
-            $this->info("Enviando URL do produto: {$product->name} para indexação...");
+            $this->info("Enviando URL do produto: {$product->title} para indexação...");
             $url = 'https://afiliado.primeescolhas.com.br/produto/' . $product->slug;
             $indexer = new GoogleIndexNowService();
             $indexer->indexUrl($url);
