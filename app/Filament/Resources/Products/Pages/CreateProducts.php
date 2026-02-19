@@ -21,7 +21,7 @@ class CreateProducts extends CreateRecord
             ->delay(now()->addSeconds(10));
 
 
-        $this->notify('success', 'URL enviada para fila de indexação 🚀');
+
 
         Cache::tags(['products'])->flush();
     }

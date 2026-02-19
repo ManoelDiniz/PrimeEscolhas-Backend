@@ -30,7 +30,5 @@ class EditProducts extends EditRecord
 
 
         Cache::tags(['products'])->flush();
-
-        $this->notify('success', 'URL enviada para fila de indexação 🚀');
     }
 }
