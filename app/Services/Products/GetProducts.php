@@ -8,6 +8,7 @@ use App\Repository\Products\ProductRepository;
 
 class GetProducts
 {
+    protected int $cacheDuration = 60; // Cache duration in seconds 1 minute = 60 seconds
     public function __construct(
         private ProductRepository $productRepository
     ) {
@@ -17,7 +18,7 @@ class GetProducts
     {
         $cacheKey = 'products_' . md5(json_encode($params->toArray()));
 
-        return cache()->remember($cacheKey, 3600, function () use ($params) {
+        return cache()->remember($cacheKey, $this->cacheDuration, function () use ($params) {
             return $this->productRepository->getAllProducts($params);
         });
     }
