@@ -5,6 +5,7 @@ namespace App\Services\Products;
 use App\Dto\ParamDto;
 use App\Models\Products;
 use App\Repository\Products\ProductRepository;
+use Illuminate\Support\Facades\Cache;
 
 class GetProducts
 {
@@ -18,7 +19,7 @@ class GetProducts
     {
         $cacheKey = 'products_' . md5(json_encode($params->toArray()));
 
-        return cache()->remember($cacheKey, $this->cacheDuration, function () use ($params) {
+        return Cache::tags(['products'])->remember($cacheKey, $this->cacheDuration, function () use ($params) {
             return $this->productRepository->getAllProducts($params);
         });
     }

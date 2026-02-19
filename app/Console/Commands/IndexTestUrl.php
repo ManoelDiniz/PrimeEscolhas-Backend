@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Jobs\IndexUrlJob;
 use App\Models\Products;
 use App\Services\Google\GoogleIndexNowService;
 use Illuminate\Console\Command;
@@ -21,8 +22,9 @@ class IndexTestUrl extends Command
         foreach ($products as $product) {
             $this->info("Enviando URL do produto: {$product->title} para indexação...");
             $url = 'https://afiliado.primeescolhas.com.br/produto/' . $product->slug;
-            $indexer = new GoogleIndexNowService();
-            $indexer->indexUrl($url);
+            IndexUrlJob::dispatch($url)
+                ->onQueue('indexing')
+                ->delay(now()->addSeconds(5)); // Pequeno delay para evitar sobrecarga
 
             $this->info('URL enviada para indexação com sucesso 🚀');
         }
