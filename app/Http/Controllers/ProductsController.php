@@ -24,8 +24,10 @@ class ProductsController extends Controller
             search: $request->query('search'),
             sortBy: $request->query('sortBy'),
             sortDirection: $request->query('sortDirection'),
-            is_featured: $request->query('is_featured')
+            is_featured: $request->query('is_featured'),
+            category_id: $request->query('category_id')
         );
+
 
         return response()->json($this->getProducts->execute($params));
     }

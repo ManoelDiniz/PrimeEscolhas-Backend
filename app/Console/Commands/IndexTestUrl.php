@@ -17,16 +17,6 @@ class IndexTestUrl extends Command
     {
 
 
-        $products = Products::get();
-
-        foreach ($products as $product) {
-            $this->info("Enviando URL do produto: {$product->title} para indexação...");
-            $url = 'https://afiliado.primeescolhas.com.br/produto/' . $product->slug;
-            IndexUrlJob::dispatch($url)
-                ->onQueue('indexing')
-                ->delay(now()->addSeconds(5)); // Pequeno delay para evitar sobrecarga
-
-            $this->info('URL enviada para indexação com sucesso 🚀');
-        }
+        IndexUrlJob::dispatch("https://afiliado.primeescolhas.com.br/sitemap.xml");
     }
 }

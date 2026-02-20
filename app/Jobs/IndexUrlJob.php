@@ -8,6 +8,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 
 class IndexUrlJob implements ShouldQueue
 {
@@ -23,6 +24,7 @@ class IndexUrlJob implements ShouldQueue
     public function handle(): void
     {
         $indexer = new GoogleIndexNowService();
-        $indexer->indexUrl($this->url);
+        $response = $indexer->indexUrl($this->url);
+        Log::alert("Resposta da indexação da URL {$this->url} enviada para o Google IndexNow: " . json_encode($response));
     }
 }

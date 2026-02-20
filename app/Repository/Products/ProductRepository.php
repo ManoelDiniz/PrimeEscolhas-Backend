@@ -19,6 +19,9 @@ class ProductRepository
         if ($params->is_featured && $params->is_featured !== null) {
             $query->where('is_featured', $params->is_featured);
         }
+        if ($params->category_id) {
+            $query->where('category_id', $params->category_id);
+        }
 
         return $query->with('affiliateLinks')->paginate($params->perPage, ['*'], 'page', $params->page);
     }

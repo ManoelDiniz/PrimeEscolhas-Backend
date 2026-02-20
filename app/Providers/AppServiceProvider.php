@@ -2,6 +2,10 @@
 
 namespace App\Providers;
 
+use App\Models\BlogPosts;
+use App\Models\Products;
+use App\Observers\BlogPostObserver;
+use App\Observers\ProductObserver;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,6 +23,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Registrar observers para indexação automática
+        BlogPosts::observe(BlogPostObserver::class);
+        Products::observe(ProductObserver::class);
     }
 }

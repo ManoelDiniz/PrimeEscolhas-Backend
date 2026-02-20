@@ -12,7 +12,8 @@ class ParamDto
         public ?string $sortBy = null,
         public ?string $sortDirection = null,
         public ?string $is_featured = null,
-        public ?bool $published = null
+        public ?bool $published = null,
+        public ?int $category_id = null
     ) {}
 
     public function toArray(): array
@@ -25,6 +26,7 @@ class ParamDto
             'sortDirection' => $this->sortDirection,
             'is_featured' => $this->is_featured,
             'published' => $this->published,
+            'category_id' => $this->category_id
         ];
     }
 }
